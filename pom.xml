@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.github.daputzy</groupId>
+    <artifactId>hyperx-cloud-flight</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+
+    <name>HyperX Cloud Flight</name>
+    <description>HyperX Cloud Flight System Tray Monitor</description>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.hid4java</groupId>
+            <artifactId>hid4java</artifactId>
+            <version>LOCAL-DARWIN-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.24</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.36</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.36</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>install-file</goal>
+                        </goals>
+                        <configuration>
+                            <groupId>org.hid4java</groupId>
+                            <artifactId>hid4java</artifactId>
+                            <version>LOCAL-DARWIN-SNAPSHOT</version>
+                            <packaging>jar</packaging>
+                            <file>${basedir}/lib/hid4java-darwin.jar</file>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.10.1</version>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>bundle</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>de.perdian.maven.plugins</groupId>
+                        <artifactId>macosappbundler-maven-plugin</artifactId>
+                        <version>1.19.0</version>
+                        <configuration>
+                            <app>
+                                <includeDependencies>true</includeDependencies>
+                            </app>
+                            <plist>
+                                <JVMMainClassName>com.github.daputzy.hyperx_cloud_flight.Main</JVMMainClassName>
+                                <CFBundleIconFile>images/bundle.icns</CFBundleIconFile>
+                            </plist>
+                            <dmg>
+                                <generate>true</generate>
+                                <appendVersion>false</appendVersion>
+                            </dmg>
+                            <jdk>
+                                <include>true</include>
+                                <location>${env.JRE_PATH}</location>
+                            </jdk>
+                            <codesign>
+                                <enable>true</enable>
+                                <identity>github-apple-signing-cert</identity>
+                            </codesign>
+                            <nativeBinary>${env.BUNDLE_ARCHITECTURE}</nativeBinary>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>bundle</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

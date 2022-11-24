@@ -1,0 +1,104 @@
+name: Release
+on: workflow_dispatch
+
+jobs:
+  release:
+    runs-on: macos-10.15
+
+    steps:
+      - name: Create Draft Release
+        id: create-release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "temp-version"
+          release_name: "draft-release"
+          body: ""
+          draft: true
+          prerelease: false
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up JRE (x86_64)
+        uses: actions/setup-java@v3
+        id: jre-x86_64
+        with:
+          java-version: 17
+          java-package: jre
+          distribution: temurin
+          architecture: x64
+
+      - name: Set up JRE (aarch64)
+        uses: actions/setup-java@v3
+        id: jre-aarch64
+        with:
+          java-version: 17
+          java-package: jre
+          distribution: temurin
+          architecture: aarch64
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: maven
+
+      - name: Install the signing certificate
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          # create variables
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          # import certificate and provisioning profile from secrets
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode --output $CERTIFICATE_PATH
+
+          # create temporary keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # import certificate to keychain
+          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+
+      - name: Initialize Maven
+        run: mvn -B initialize
+
+      - name: Bundle (x86_64)
+        env:
+          JRE_PATH: ${{ steps.jre-x86_64.outputs.path }}
+          BUNDLE_ARCHITECTURE: X86_64
+        run: mvn -B -P bundle clean package
+
+      - name: Upload Artifact (x86_64)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create-release.outputs.upload_url }}
+          asset_path: "target/HyperX Cloud Flight.dmg"
+          asset_name: "HyperX.Cloud.Flight.x86_64.dmg"
+          asset_content_type: application/octet-stream
+
+      - name: Bundle (aarch64)
+        env:
+          JRE_PATH: ${{ steps.jre-aarch64.outputs.path }}
+          BUNDLE_ARCHITECTURE: ARM_64
+        run: mvn -B -P bundle clean package
+
+      - name: Upload Artifact (aarch64)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create-release.outputs.upload_url }}
+          asset_path: "target/HyperX Cloud Flight.dmg"
+          asset_name: "HyperX.Cloud.Flight.aarch64.dmg"
+          asset_content_type: application/octet-stream

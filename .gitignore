@@ -212,3 +212,7 @@ gradle-app.setting
 
 # Avoid ignoring Maven wrapper jar file (.jar files are usually ignored)
 !.mvn/wrapper/maven-wrapper.jar
+
+# CUSTOM
+!lib/hid4java-darwin.jar
+.DS_STORE
