@@ -27,7 +27,7 @@ Feel free to [report any issues](https://github.com/DaPutzy/hyperx-cloud-flight-
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](https://github.com/DaPutzy/hyperx-cloud-flight-system-tray/blob/master/LICENSE.md) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/DaPutzy/hyperx-cloud-flight-system-tray/blob/master/LICENSE) file for details.
 
 ## Other Projects
 
