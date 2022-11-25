@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Simple tray application for macOS which shows metrics of a <em>HyperX Cloud Flight Wireless Headset</em>, e.g. battery level.
+Simple tray application for macOS which shows metrics for HyperX Cloud Flight Wireless Headsets.
 
 ## Screenshots
 
@@ -27,7 +27,7 @@ Feel free to [report any issues](https://github.com/DaPutzy/hyperx-cloud-flight-
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/DaPutzy/hyperx-cloud-flight-system-tray/blob/master/LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Other Projects
 
