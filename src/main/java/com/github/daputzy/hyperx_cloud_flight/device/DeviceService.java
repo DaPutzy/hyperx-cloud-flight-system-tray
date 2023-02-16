@@ -59,6 +59,11 @@ public class DeviceService {
 		while (!Thread.interrupted()) {
 			final byte[] data = new byte[32];
 			final int size = device.read(data);
+
+			if (size < 0) {
+				throw new IllegalStateException("cloud flight device disconnected");
+			}
+
 			Event event = parseResult(size, data);
 
 			if (REFRESH_BATTERY_ON_MUTE && event instanceof Muted) triggerBatteryLevel(device);
