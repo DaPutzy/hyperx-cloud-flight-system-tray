@@ -7,6 +7,7 @@ import com.github.daputzy.hyperx_cloud_flight.device.Event.PowerOn;
 import com.github.daputzy.hyperx_cloud_flight.device.Event.VolumeDown;
 import com.github.daputzy.hyperx_cloud_flight.device.Event.VolumeUp;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -25,8 +26,6 @@ import org.hid4java.jna.HidApi;
 @RequiredArgsConstructor
 public class DeviceService {
 
-	private static final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-
 	private static final int VENDOR_ID = 0x0951;
 	private static final int PRODUCT_ID = 0x16c4;
 
@@ -34,7 +33,16 @@ public class DeviceService {
 
 	private final Consumer<Event> eventConsumer;
 
+	private ScheduledExecutorService scheduler;
+	private HidServices hidServices;
+
 	public void init() throws HidException {
+		log.info("initializing hid services");
+
+		if (hidServices != null) {
+			throw new IllegalStateException("hid services already initialized");
+		}
+
 		HidApi.darwinOpenDevicesNonExclusive = true;
 
 		HidServicesSpecification hidServicesSpecification = new HidServicesSpecification();
@@ -43,17 +51,38 @@ public class DeviceService {
 		hidServicesSpecification.setAutoDataRead(false);
 		hidServicesSpecification.setAutoShutdown(true);
 
-		HidServices hidServices = HidManager.getHidServices(hidServicesSpecification);
+		hidServices = HidManager.getHidServices(hidServicesSpecification);
 		hidServices.start();
+	}
 
-		HidDevice device = hidServices.getAttachedHidDevices().stream()
-				.filter(d -> Objects.equals(VENDOR_ID, d.getVendorId()) && Objects.equals(PRODUCT_ID, d.getProductId()))
-				.findFirst()
-				.orElseThrow(() -> new IllegalStateException("did not find hyperx cloud flight device"));
+	public Optional<HidDevice> scan() {
+		log.info("scanning for devices");
 
-		device.open();
-		device.setNonBlocking(false);
+		if (hidServices == null) {
+			throw new IllegalStateException("hid services not initialized");
+		}
 
+		Optional<HidDevice> device = hidServices.getAttachedHidDevices().stream()
+			.filter(d -> Objects.equals(VENDOR_ID, d.getVendorId()) && Objects.equals(PRODUCT_ID, d.getProductId()))
+			.findFirst();
+
+		if (device.isEmpty()) return device;
+
+		device.get().open();
+		device.get().setNonBlocking(false);
+
+		return device;
+	}
+
+	public void read(final HidDevice device) throws DeviceDisconnectedException, InterruptedException {
+		log.info("reading device data");
+
+		if (scheduler != null) {
+			scheduler.shutdownNow();
+			final boolean success = scheduler.awaitTermination(5, TimeUnit.SECONDS);
+			if (!success) throw new IllegalStateException("could not shutdown scheduler");
+		}
+		scheduler = Executors.newSingleThreadScheduledExecutor();
 		scheduler.scheduleAtFixedRate(() -> triggerBatteryLevel(device), 0, 5, TimeUnit.MINUTES);
 
 		while (!Thread.interrupted()) {
@@ -61,7 +90,8 @@ public class DeviceService {
 			final int size = device.read(data);
 
 			if (size < 0) {
-				throw new IllegalStateException("cloud flight device disconnected");
+				eventConsumer.accept(Event.POWER_OFF);
+				throw new DeviceDisconnectedException();
 			}
 
 			Event event = parseResult(size, data);
@@ -156,11 +186,11 @@ public class DeviceService {
 
 	private void logEvent(Event event) {
 		if (event instanceof BatteryLevel batteryLevelEvent) {
-			log.debug("{}: {}", event.getClass().getSimpleName(), batteryLevelEvent.getLevel());
+			log.debug("read event: {} - {}", event.getClass().getSimpleName(), batteryLevelEvent.getLevel());
 		} else if (event instanceof Ignore || event instanceof VolumeUp || event instanceof VolumeDown) {
-			log.trace("{}", event.getClass().getSimpleName());
+			log.trace("read event: {}", event.getClass().getSimpleName());
 		} else {
-			log.debug("{}", event.getClass().getSimpleName());
+			log.debug("read event: {}", event.getClass().getSimpleName());
 		}
 	}
 }
