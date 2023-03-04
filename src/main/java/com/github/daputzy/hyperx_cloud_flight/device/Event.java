@@ -1,5 +1,8 @@
 package com.github.daputzy.hyperx_cloud_flight.device;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
 public interface Event {
 
 	Event MUTED = new Muted();
@@ -20,19 +23,10 @@ public interface Event {
 	class Ignore implements Event {}
 	class BatteryCharging implements Event {}
 
+	@Getter
+	@RequiredArgsConstructor(staticName = "of")
 	class BatteryLevel implements Event {
+
 		private final Integer level;
-
-		public Integer getLevel() {
-			return level;
-		}
-
-		private BatteryLevel(Integer level) {
-			this.level = level;
-		}
-
-		public static BatteryLevel of(Integer level) {
-			return new BatteryLevel(level);
-		}
 	}
 }

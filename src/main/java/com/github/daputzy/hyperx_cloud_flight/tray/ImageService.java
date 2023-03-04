@@ -15,36 +15,31 @@ import lombok.SneakyThrows;
 @RequiredArgsConstructor
 public class ImageService {
 
-	public Image loadImage(@NonNull String imagePath) {
-		URL resource = Objects.requireNonNull(getClass().getClassLoader().getResource(imagePath));
+	public BufferedImage loadImage(@NonNull String imagePath) {
+		final URL resource = Objects.requireNonNull(getClass().getClassLoader().getResource(imagePath));
 
 		return read(resource);
 	}
 
-	public Image loadImages(@NonNull List<String> imageFiles) {
-		List<BufferedImage> images = imageFiles.stream()
-				.filter(Objects::nonNull)
-				.map(getClass().getClassLoader()::getResource)
-				.filter(Objects::nonNull)
-				.map(this::read)
-				.toList();
+	public BufferedImage loadImages(@NonNull List<String> imagePaths) {
+		final List<BufferedImage> images = imagePaths.stream().map(this::loadImage).toList();
 
 		return combineImagesHorizontally(images);
 	}
 
-	private Image combineImagesHorizontally(@NonNull List<BufferedImage> images) {
+	private BufferedImage combineImagesHorizontally(@NonNull List<BufferedImage> images) {
 		if (images.isEmpty()) throw new RuntimeException("need at least one image to combine!");
 
-		BufferedImage image = new BufferedImage(
+		final BufferedImage image = new BufferedImage(
 				images.stream().mapToInt(BufferedImage::getWidth).sum(),
 				images.stream().mapToInt(BufferedImage::getHeight).max().orElseThrow(),
 				BufferedImage.TYPE_4BYTE_ABGR
 		);
 
-		Graphics2D graphics = image.createGraphics();
+		final Graphics2D graphics = image.createGraphics();
 
 		int x = 0;
-		for (Image i : images) {
+		for (final Image i : images) {
 			graphics.drawImage(i, x, 0, null);
 			x += i.getWidth(null);
 		}
@@ -58,14 +53,4 @@ public class ImageService {
 	private BufferedImage read(@NonNull URL url) {
 		return ImageIO.read(url);
 	}
-
-//	private void invertImage(BufferedImage image) {
-//		DataBufferByte buf = (DataBufferByte) image.getRaster().getDataBuffer();
-//		byte[] values = buf.getData();
-//		for (int i = 0; i < values.length; i ++) {
-//			if (i % 4 != 0) {
-//				values[i] = (byte) (values[i] ^ 0xff);
-//			}
-//		}
-//	}
 }

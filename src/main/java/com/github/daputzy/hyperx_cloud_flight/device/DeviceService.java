@@ -116,11 +116,11 @@ public class DeviceService {
 
 	private Event parseResult(int size, byte[] data) {
 		switch (size) {
-			case 2:
+			case 2 -> {
 				if (data[0] == 0x64) {
 					if (data[1] == 0x01) {
 						return Event.POWER_ON;
-					} else if (data[1] == 0x03){
+					} else if (data[1] == 0x03) {
 						return Event.POWER_OFF;
 					}
 				}
@@ -130,28 +130,27 @@ public class DeviceService {
 					}
 					return Event.UN_MUTED;
 				}
-				break;
-
-			case 5:
+			}
+			case 5 -> {
 				if (data[1] == 0x01) {
 					return Event.VOLUME_UP;
-				} else if (data[1] == 0x02){
+				} else if (data[1] == 0x02) {
 					return Event.VOLUME_DOWN;
 				}
-				break;
-
-			case 20:
+			}
+			case 20 -> {
 				if (data[3] == 0x10 || data[3] == 0x11) {
 					if ((data[4] & 0xff) >= 20) {
 						return Event.BATTERY_CHARGING;
 					}
-					return Event.BatteryLevel.of(100);
+					return BatteryLevel.of(100);
 				}
 				Integer level = parseBatteryPercent(data[3], data[4] & 0xff);
-				return Event.BatteryLevel.of(level);
-
-			default:
+				return BatteryLevel.of(level);
+			}
+			default -> {
 				return Event.IGNORE;
+			}
 		}
 
 		return Event.IGNORE;
