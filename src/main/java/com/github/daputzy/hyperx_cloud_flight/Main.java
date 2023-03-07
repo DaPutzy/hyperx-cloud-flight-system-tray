@@ -63,6 +63,7 @@ public class Main {
 			} catch (final DeviceDisconnectedException e) {
 				log.warn("cloud flight device disconnected");
 			}
+			device.ifPresent(HidDevice::close);
 		}
 	}
 }
