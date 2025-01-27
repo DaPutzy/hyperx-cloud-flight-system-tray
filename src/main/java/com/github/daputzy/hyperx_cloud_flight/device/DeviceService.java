@@ -6,12 +6,15 @@ import com.github.daputzy.hyperx_cloud_flight.device.Event.Muted;
 import com.github.daputzy.hyperx_cloud_flight.device.Event.PowerOn;
 import com.github.daputzy.hyperx_cloud_flight.device.Event.VolumeDown;
 import com.github.daputzy.hyperx_cloud_flight.device.Event.VolumeUp;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.IntPredicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hid4java.HidDevice;
@@ -27,7 +30,7 @@ import org.hid4java.jna.HidApi;
 public class DeviceService {
 
 	private static final int VENDOR_ID = 0x0951;
-	private static final int PRODUCT_ID = 0x16c4;
+	private static final int[] PRODUCT_ID = {0x16c4, 0x1723};
 
 	private static final boolean REFRESH_BATTERY_ON_MUTE = true;
 
@@ -63,7 +66,7 @@ public class DeviceService {
 		}
 
 		Optional<HidDevice> device = hidServices.getAttachedHidDevices().stream()
-			.filter(d -> Objects.equals(VENDOR_ID, d.getVendorId()) && Objects.equals(PRODUCT_ID, d.getProductId()))
+			.filter(d -> Objects.equals(VENDOR_ID, d.getVendorId()) && Arrays.stream(PRODUCT_ID).anyMatch(p -> Objects.equals(p, d.getProductId())))
 			.findFirst();
 
 		if (device.isEmpty()) return device;
